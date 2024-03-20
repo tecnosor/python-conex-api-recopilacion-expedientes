@@ -1,0 +1,195 @@
+{
+	"info": {
+		"_postman_id": "9da31110-9460-4e78-ba28-90246180e61f",
+		"name": "CONEX_API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "GET PROYECTOS FROM CALLE",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://servayto.madrid.es/CONEX_RSCONSULTAEXP/api_rsconsultaexp/v1/expedientes/query?tipo=CL&nombre=PROVISIONAL BERROCALES SESENTA Y SIETE&numeroDesde=&numeroHasta=&escalera=&planta=&puerta=&fechaAlta=",
+					"protocol": "https",
+					"host": [
+						"servayto",
+						"madrid",
+						"es"
+					],
+					"path": [
+						"CONEX_RSCONSULTAEXP",
+						"api_rsconsultaexp",
+						"v1",
+						"expedientes",
+						"query"
+					],
+					"query": [
+						{
+							"key": "tipo",
+							"value": "CL"
+						},
+						{
+							"key": "nombre",
+							"value": "PROVISIONAL BERROCALES SESENTA Y SIETE"
+						},
+						{
+							"key": "numeroDesde",
+							"value": ""
+						},
+						{
+							"key": "numeroHasta",
+							"value": ""
+						},
+						{
+							"key": "escalera",
+							"value": ""
+						},
+						{
+							"key": "planta",
+							"value": ""
+						},
+						{
+							"key": "puerta",
+							"value": ""
+						},
+						{
+							"key": "fechaAlta",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET DETAIL PROYECTO",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://servayto.madrid.es/CONEX_RSCONSULTAEXP/api_rsconsultaexp/v1/expedientes/:CODIGO_INTERNO",
+					"protocol": "https",
+					"host": [
+						"servayto",
+						"madrid",
+						"es"
+					],
+					"path": [
+						"CONEX_RSCONSULTAEXP",
+						"api_rsconsultaexp",
+						"v1",
+						"expedientes",
+						":CODIGO_INTERNO"
+					],
+					"variable": [
+						{
+							"key": "CODIGO_INTERNO",
+							"value": "TEST000000000"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET DOCUMENTS PROYECTO",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://servayto.madrid.es/CONEX_RSCONSULTAEXP/api_rsconsultaexp/v1/expedientes/:CODIGO_INTERNO/documentos",
+					"protocol": "https",
+					"host": [
+						"servayto",
+						"madrid",
+						"es"
+					],
+					"path": [
+						"CONEX_RSCONSULTAEXP",
+						"api_rsconsultaexp",
+						"v1",
+						"expedientes",
+						":CODIGO_INTERNO",
+						"documentos"
+					],
+					"variable": [
+						{
+							"key": "CODIGO_INTERNO",
+							"value": "TEST000000000"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET DET DOCUMENT PROYECTO",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://servayto.madrid.es/CONEX_RSCONSULTAEXP/api_rsconsultaexp/v1/expedientes/:CODIGO_INTERNO/documentos/:codigo_doc/descarga",
+					"protocol": "https",
+					"host": [
+						"servayto",
+						"madrid",
+						"es"
+					],
+					"path": [
+						"CONEX_RSCONSULTAEXP",
+						"api_rsconsultaexp",
+						"v1",
+						"expedientes",
+						":CODIGO_INTERNO",
+						"documentos",
+						":codigo_doc",
+						"descarga"
+					],
+					"variable": [
+						{
+							"key": "CODIGO_INTERNO",
+							"value": "TEST000000000"
+						},
+						{
+							"key": "codigo_doc",
+							"value": "TEST_DOC_000000000"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "extrae.esto.desde.la.web.coex.mirando.las.peticiones.que.hace.el.cliente",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
