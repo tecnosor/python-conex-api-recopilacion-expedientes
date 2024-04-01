@@ -63,14 +63,14 @@ class ConexApiService:
 
 class GuardadorDeDocumentos:
 
-    def guardarDocumento(nombre_carpeta, documento_info, binario):
+    def guardarDocumento(self, nombre_carpeta, documento_info, binario):
         codigo_doc = documento_info["codigoDoc"]
         descripcion = str(documento_info["descripcion"]).replace(" ", "_").replace("\\", "_").replace("/", "_").replace(".","_")
         tipo = documento_info["tipo"].lower()
         with open(f"{nombre_carpeta}\{descripcion}.{tipo}", 'wb') as archivo:
             archivo.write(binario)
 
-    def guardarExpediente(nombre_carpeta, proyecto_info):
+    def guardarExpediente(self, nombre_carpeta, proyecto_info):
         with open(f"{nombre_carpeta}\informacion_expediente.txt", 'w') as archivo:
             archivo.write(f"Código Interno: {proyecto_info['codigoInterno']}\n")
             archivo.write(f"Referencia: {proyecto_info['referencia']}\n")
@@ -89,7 +89,7 @@ class GuardadorDeDocumentos:
             archivo.write(f"Código Local: {proyecto_info['codigoLocal']}\n")
             archivo.write(f"Área: {proyecto_info['area']}\n")
 
-    def creaDirectorioSiNoExiste(nombre_carpeta):
+    def creaDirectorioSiNoExiste(self, nombre_carpeta):
         if not os.path.exists(nombre_carpeta):
             os.makedirs(nombre_carpeta)
 
