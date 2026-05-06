@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CONEX Berrocales — Visor</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- Leaflet -->
+  <link href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+  <!-- MarkerCluster -->
+  <link href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" rel="stylesheet">
+
+  <style>
+    :root {
+      --blue: #003893;
+      --red:  #c60b1e;
+      --av:   #0d6efd;
+      --cl:   #198754;
+      --pz:   #fd7e14;
+      --oth:  #6c757d;
+    }
+    body { background: #eef0f3; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+    /* Navbar */
+    .topbar { background: var(--blue); color: white; padding: 10px 20px;
+              display: flex; align-items: center; justify-content: space-between; }
+    .topbar-brand { font-weight: 700; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; }
+    .topbar-brand i { font-size: 1.3rem; }
+
+    /* Stats */
+    .stat-card { background: white; border-radius: 10px; padding: 14px 18px;
+                 box-shadow: 0 1px 6px rgba(0,0,0,.08); text-align: center; }
+    .stat-card .val { font-size: 1.8rem; font-weight: 700; color: var(--blue); line-height: 1; }
+    .stat-card .lbl { font-size: .72rem; color: #888; text-transform: uppercase; letter-spacing: .4px; margin-top: 2px; }
+
+    /* Tabs */
+    .tab-bar { display: flex; gap: 4px; background: white; border-radius: 10px;
+               padding: 6px; box-shadow: 0 1px 6px rgba(0,0,0,.07); margin: 12px 0; }
+    .tab-btn { flex: 1; border: none; background: transparent; border-radius: 7px;
+               padding: 8px 16px; font-size: .9rem; color: #666; cursor: pointer;
+               transition: background .15s, color .15s; }
+    .tab-btn.active { background: var(--blue); color: white; font-weight: 600; }
+
+    /* Filter bar */
+    .fbar { background: white; border-radius: 10px; padding: 14px 16px;
+            box-shadow: 0 1px 6px rgba(0,0,0,.06); margin-bottom: 14px; }
+    .fbar .row { row-gap: 8px; }
+
+    /* Cards */
+    .exp-card { background: white; border-radius: 10px;
+                box-shadow: 0 1px 6px rgba(0,0,0,.07);
+                border-left: 4px solid #dee2e6;
+                transition: box-shadow .15s, transform .1s;
+                cursor: pointer; overflow: hidden; }
+    .exp-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.13); transform: translateY(-1px); }
+    .exp-card.t-av { border-left-color: var(--av); }
+    .exp-card.t-cl { border-left-color: var(--cl); }
+    .exp-card.t-pz { border-left-color: var(--pz); }
+    .exp-card .body { padding: 12px 14px; }
+    .exp-card .street { font-weight: 700; font-size: .9rem; }
+    .ref-badge { font-family: monospace; font-size: .72rem;
+                 background: #f0f2f5; color: #555; border-radius: 5px; padding: 1px 7px; }
+    .tipo-pill { font-size: .68rem; border-radius: 20px; padding: 2px 8px;
+                 font-weight: 600; color: white; display: inline-block; }
+    .tp-av { background: var(--av); }
+    .tp-cl { background: var(--cl); }
+    .tp-pz { background: var(--pz); }
+    .tp-oth { background: var(--oth); }
+    .asunto { font-size: .8rem; color: #555; line-height: 1.35; margin-top: 4px; }
+    .meta { font-size: .75rem; color: #888; margin-top: 4px; }
+    .doc-count { font-size: .75rem; background: #e8f4ff; color: #0056b3;
+                 border-radius: 5px; padding: 2px 7px; display: inline-flex;
+                 align-items: center; gap: 4px; margin-top: 6px; }
+    .year-chip { font-size: .68rem; background: #e9ecef; color: #666;
+                 border-radius: 4px; padding: 1px 6px; }
+
+    /* Table view */
+    #tableView { display: none; }
+    #tableView table { font-size: .83rem; }
+    #tableView td, #tableView th { vertical-align: middle; }
+
+    /* Map */
+    #mapContainer { display: none; }
+    #map { height: calc(100vh - 220px); min-height: 400px; border-radius: 10px;
+           box-shadow: 0 1px 8px rgba(0,0,0,.1); }
+
+    /* Modal */
+    .modal-header { background: var(--blue); color: white; }
+    .modal-header .btn-close { filter: invert(1); }
+    .doc-link { display: flex; align-items: center; gap: 6px; font-size: .8rem;
+                text-decoration: none; color: var(--blue); padding: 3px 0; }
+    .doc-link:hover { color: var(--red); }
+    .detail-table th { font-size: .8rem; color: #888; font-weight: 500; width: 42%; }
+    .detail-table td { font-size: .82rem; }
+    .asunto-box { background: #f8f9fa; border-radius: 8px; padding: 10px 12px;
+                  font-size: .82rem; line-height: 1.5; }
+
+    /* Loading */
+    #loader { position: fixed; inset: 0; background: rgba(255,255,255,.9); z-index: 9999;
+              display: flex; flex-direction: column; align-items: center; justify-content: center;
+              gap: 12px; font-size: .95rem; color: #555; }
+
+    /* No results */
+    #noResults { text-align: center; padding: 60px 20px; color: #aaa; display: none; }
+    #noResults i { font-size: 3rem; display: block; margin-bottom: 10px; }
+
+    /* Info bar */
+    .results-bar { font-size: .82rem; color: #888; margin-bottom: 10px;
+                   display: flex; align-items: center; justify-content: space-between; }
+
+    /* View toggle */
+    .view-toggle { display: flex; gap: 4px; }
+    .view-btn { border: 1px solid #dee2e6; background: white; border-radius: 6px;
+                padding: 3px 9px; font-size: .8rem; cursor: pointer; color: #666; }
+    .view-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
+
+    @media (max-width:576px) {
+      .stat-card .val { font-size: 1.4rem; }
+      #map { height: 55vh; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loader">
+  <div class="spinner-border text-primary" style="width:2.5rem;height:2.5rem"></div>
+  <span>Cargando expedientes…</span>
+</div>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <i class="bi bi-building-check"></i>
+    CONEX — Berrocales / Ahijones
+  </div>
+  <button class="btn btn-sm btn-outline-light" onclick="recargar()">
+    <i class="bi bi-arrow-clockwise me-1"></i>Recargar
+  </button>
+</div>
+
+<div class="container-fluid p-3">
+
+  <!-- Stats -->
+  <div class="row g-2 mb-1">
+    <div class="col-6 col-sm-3"><div class="stat-card"><div class="val" id="sTotal">—</div><div class="lbl">Expedientes</div></div></div>
+    <div class="col-6 col-sm-3"><div class="stat-card"><div class="val" id="sCalles">—</div><div class="lbl">Calles</div></div></div>
+    <div class="col-6 col-sm-3"><div class="stat-card"><div class="val" id="sDocs">—</div><div class="lbl">Documentos</div></div></div>
+    <div class="col-6 col-sm-3"><div class="stat-card"><div class="val" id="sCoords">—</div><div class="lbl">Con GPS</div></div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn active" id="btnTabLista" onclick="switchTab('lista')">
+      <i class="bi bi-list-ul me-1"></i>Lista
+    </button>
+    <button class="tab-btn" id="btnTabMapa" onclick="switchTab('mapa')">
+      <i class="bi bi-map me-1"></i>Mapa
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       TAB: LISTA
+  ════════════════════════════════════════════ -->
+  <div id="tabLista">
+    <div class="fbar">
+      <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-4">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input id="q" type="text" class="form-control" placeholder="Buscar calle, referencia, asunto…">
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <select id="fTipo" class="form-select form-select-sm">
+            <option value="">Tipo vía</option>
+            <option value="AV">Avenida (AV)</option>
+            <option value="CL">Calle (CL)</option>
+            <option value="PZ">Plaza (PZ)</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <select id="fAnyo" class="form-select form-select-sm"><option value="">Año</option></select>
+        </div>
+        <div class="col-12 col-md-3">
+          <select id="fTipoExp" class="form-select form-select-sm"><option value="">Tipo expediente</option></select>
+        </div>
+        <div class="col-6 col-md-1 d-flex align-items-center gap-1">
+          <input class="form-check-input" type="checkbox" id="fDocs">
+          <label class="form-check-label small" for="fDocs">Con docs</label>
+        </div>
+      </div>
+      <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <label class="small text-muted">Ordenar:</label>
+          <select id="sort" class="form-select form-select-sm" style="width:auto">
+            <option value="fecha_d">Fecha ↓</option>
+            <option value="fecha_a">Fecha ↑</option>
+            <option value="calle">Calle A-Z</option>
+            <option value="docs">Más docs</option>
+          </select>
+          <button class="btn btn-sm btn-outline-secondary" onclick="limpiar()">
+            <i class="bi bi-x-circle me-1"></i>Limpiar
+          </button>
+        </div>
+        <div class="view-toggle">
+          <button class="view-btn active" id="btnCards" onclick="setView('cards')"><i class="bi bi-grid-3x3-gap"></i></button>
+          <button class="view-btn" id="btnTable" onclick="setView('table')"><i class="bi bi-table"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-bar">
+      <span id="resInfo"></span>
+    </div>
+
+    <!-- Cards -->
+    <div id="cardsView" class="row g-3"></div>
+
+    <!-- Table -->
+    <div id="tableView">
+      <div class="bg-white rounded-3 shadow-sm overflow-auto">
+        <table class="table table-hover table-sm mb-0">
+          <thead class="table-light sticky-top">
+            <tr>
+              <th>Tipo</th><th>Calle</th><th>Referencia</th>
+              <th>Fecha</th><th>Emplazamiento</th><th>Tipo expediente</th><th>Docs</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="noResults"><i class="bi bi-search"></i><div>Sin resultados con los filtros aplicados</div></div>
+  </div><!-- /tabLista -->
+
+  <!-- ═══════════════════════════════════════════
+       TAB: MAPA
+  ════════════════════════════════════════════ -->
+  <div id="tabMapa" style="display:none">
+    <div class="fbar">
+      <div class="row g-2 align-items-center">
+        <div class="col-12 col-md-4">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input id="mq" type="text" class="form-control" placeholder="Filtrar en mapa…">
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <select id="mTipo" class="form-select form-select-sm">
+            <option value="">Tipo vía</option>
+            <option value="AV">AV</option>
+            <option value="CL">CL</option>
+            <option value="PZ">PZ</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <select id="mAnyo" class="form-select form-select-sm"><option value="">Año</option></select>
+        </div>
+        <div class="col-12 col-md-4">
+          <span id="mInfo" class="small text-muted">
+            <i class="bi bi-info-circle me-1"></i>Solo expedientes con coordenadas GPS
+          </span>
+        </div>
+      </div>
+    </div>
+    <div id="map"></div>
+  </div><!-- /tabMapa -->
+
+</div><!-- /container -->
+
+<!-- ═══════════════════════════════════════════
+     MODAL DETALLE
+════════════════════════════════════════════ -->
+<div class="modal fade" id="modal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="mTitle"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="mBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/proj4@2.9.0/dist/proj4.js"></script>
+
+<script>
+// ── Coordinate conversion ─────────────────────────────────────────────────
+// ED50 UTM Zone 30N (EPSG:23030) → WGS84
+proj4.defs('ED50_30N', '+proj=utm +zone=30 +ellps=intl +towgs84=-87,-98,-121,0,0,0,0 +units=m +no_defs');
+
+function toWgs84(x, y) {
+  try {
+    const [lng, lat] = proj4('ED50_30N', 'EPSG:4326', [parseFloat(x), parseFloat(y)]);
+    // Basic sanity check: Madrid province bounds
+    if (lat < 39.9 || lat > 40.8 || lng < -4.2 || lng > -3.2) return null;
+    return [lat, lng];
+  } catch { return null; }
+}
+
+// ── Global state ──────────────────────────────────────────────────────────
+let DATA = [];                // all expedientes
+const BY_ID = {};             // codigoInterno → expediente
+let currentView = 'cards';    // 'cards' | 'table'
+let leafletMap = null;
+let cluster   = null;
+let mapReady  = false;
+let bsModal   = null;
+
+// ── Init ──────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  bsModal = new bootstrap.Modal(document.getElementById('modal'));
+  load();
+
+  const filterIds = ['q','fTipo','fAnyo','fTipoExp','sort','fDocs'];
+  filterIds.forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input',  renderLista);
+    el.addEventListener('change', renderLista);
+  });
+
+  ['mq','mTipo','mAnyo'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input',  renderMapa);
+    el.addEventListener('change', renderMapa);
+  });
+});
+
+async function load() {
+  document.getElementById('loader').style.display = 'flex';
+  try {
+    const res = await fetch('/api/data');
+    DATA = await res.json();
+    DATA.forEach(e => { if (e.codigoInterno) BY_ID[e.codigoInterno] = e; });
+    popularFiltros();
+    actualizarStats();
+    renderLista();
+  } catch(err) {
+    alert('No se pudieron cargar los datos. ¿Está viewer.py en ejecución?');
+  }
+  document.getElementById('loader').style.display = 'none';
+}
+
+async function recargar() {
+  await fetch('/api/reload');
+  DATA = []; Object.keys(BY_ID).forEach(k => delete BY_ID[k]);
+  if (mapReady) { cluster.clearLayers(); }
+  await load();
+  if (mapReady) renderMapa();
+}
+
+// ── Filters & helpers ──────────────────────────────────────────────────────
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function popularFiltros() {
+  const anyos    = [...new Set(DATA.map(e => (e.fechaAlta||'').slice(0,4)).filter(Boolean))].sort().reverse();
+  const tiposExp = [...new Set(DATA.map(e => e.tipoExp).filter(Boolean))].sort();
+
+  const fill = (id, opts) => {
+    const sel = document.getElementById(id);
+    const first = sel.options[0];
+    sel.innerHTML = '';
+    sel.appendChild(first);
+    opts.forEach(v => { const o = document.createElement('option'); o.value = o.textContent = v; sel.appendChild(o); });
+  };
+  fill('fAnyo',    anyos);
+  fill('fTipoExp', tiposExp);
+  fill('mAnyo',    anyos);
+}
+
+function actualizarStats() {
+  const totalDocs = DATA.reduce((s, e) => s + e.numDocs, 0);
+  const calles    = new Set(DATA.map(e => e.calleDir)).size;
+  const conGPS    = DATA.filter(e => e.coordX).length;
+  document.getElementById('sTotal').textContent  = DATA.length;
+  document.getElementById('sCalles').textContent = calles;
+  document.getElementById('sDocs').textContent   = totalDocs;
+  document.getElementById('sCoords').textContent = conGPS;
+}
+
+function getF() {
+  return {
+    q:       document.getElementById('q').value.trim().toLowerCase(),
+    tipo:    document.getElementById('fTipo').value,
+    anyo:    document.getElementById('fAnyo').value,
+    tipoExp: document.getElementById('fTipoExp').value,
+    docs:    document.getElementById('fDocs').checked,
+    sort:    document.getElementById('sort').value,
+  };
+}
+
+function filtrar(lista, f) {
+  return lista.filter(e => {
+    if (f.tipo    && e.tipo    !== f.tipo)                return false;
+    if (f.anyo    && !(e.fechaAlta||'').startsWith(f.anyo)) return false;
+    if (f.tipoExp && e.tipoExp !== f.tipoExp)             return false;
+    if (f.docs    && e.numDocs === 0)                     return false;
+    if (f.q) {
+      const hay = [e.calle, e.referencia, e.asunto, e.emplazamiento, e.tipoExp]
+                  .join(' ').toLowerCase();
+      if (!hay.includes(f.q)) return false;
+    }
+    return true;
+  });
+}
+
+function ordenar(lista, sort) {
+  return [...lista].sort((a, b) => {
+    switch (sort) {
+      case 'fecha_a': return (a.fechaAlta||'').localeCompare(b.fechaAlta||'');
+      case 'calle':   return a.calle.localeCompare(b.calle);
+      case 'docs':    return b.numDocs - a.numDocs;
+      default:        return (b.fechaAlta||'').localeCompare(a.fechaAlta||'');
+    }
+  });
+}
+
+function limpiar() {
+  ['q','fTipo','fAnyo','fTipoExp'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('fDocs').checked = false;
+  document.getElementById('sort').selectedIndex = 0;
+  renderLista();
+}
+
+// ── Lista ──────────────────────────────────────────────────────────────────
+function tipoPill(tipo) {
+  const cls = { AV: 'tp-av', CL: 'tp-cl', PZ: 'tp-pz' }[tipo] || 'tp-oth';
+  return `<span class="tipo-pill ${cls}">${esc(tipo)}</span>`;
+}
+function tipoCard(tipo) { return `t-${(tipo||'').toLowerCase()}`; }
+
+function renderLista() {
+  const f = getF();
+  const filtered = ordenar(filtrar(DATA, f), f.sort);
+
+  document.getElementById('resInfo').textContent =
+    `${filtered.length} de ${DATA.length} expedientes`;
+
+  const noRes = document.getElementById('noResults');
+
+  if (filtered.length === 0) {
+    document.getElementById('cardsView').innerHTML = '';
+    document.getElementById('tbody').innerHTML = '';
+    noRes.style.display = '';
+    return;
+  }
+  noRes.style.display = 'none';
+
+  if (currentView === 'cards') renderCards(filtered);
+  else renderTable(filtered);
+}
+
+function renderCards(list) {
+  document.getElementById('cardsView').innerHTML = list.map(buildCard).join('');
+}
+
+function buildCard(e) {
+  const anyo    = (e.fechaAlta||'').slice(0,4);
+  const asunto  = e.asunto ? (e.asunto.length > 130 ? e.asunto.slice(0,130)+'…' : e.asunto) : '';
+  const docBadge = e.numDocs > 0
+    ? `<span class="doc-count"><i class="bi bi-paperclip"></i>${e.numDocs} doc${e.numDocs>1?'s':''}</span>`
+    : '';
+  const gpsIcon = e.coordX
+    ? `<span class="ms-1" title="Con coordenadas GPS" style="color:#0d9488;font-size:.8rem">📍</span>`
+    : '';
+
+  return `
+    <div class="col-12 col-md-6 col-xl-4">
+      <div class="exp-card ${tipoCard(e.tipo)} h-100" data-id="${esc(e.codigoInterno)}" onclick="abrirModal(this.dataset.id)">
+        <div class="body">
+          <div class="d-flex justify-content-between align-items-start mb-1">
+            <div>${tipoPill(e.tipo)}<strong class="street ms-1">${esc(e.calle)}</strong>${gpsIcon}</div>
+            ${anyo ? `<span class="year-chip">${anyo}</span>` : ''}
+          </div>
+          <div class="mb-1"><span class="ref-badge">${esc(e.referencia||e.refDir)}</span></div>
+          ${e.emplazamiento ? `<div class="meta"><i class="bi bi-geo-alt"></i> ${esc(e.emplazamiento)}</div>` : ''}
+          ${e.tipoExp ? `<div class="mt-1"><span class="badge bg-light text-dark border" style="font-size:.68rem">${esc(e.tipoExp)}</span></div>` : ''}
+          ${asunto ? `<div class="asunto">${esc(asunto)}</div>` : ''}
+          ${docBadge}
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderTable(list) {
+  document.getElementById('tbody').innerHTML = list.map(e => {
+    const anyo = (e.fechaAlta||'').slice(0,4);
+    return `<tr data-id="${esc(e.codigoInterno)}" onclick="abrirModal(this.dataset.id)" style="cursor:pointer">
+      <td>${tipoPill(e.tipo)}</td>
+      <td><strong>${esc(e.calle)}</strong></td>
+      <td><code style="font-size:.75rem">${esc(e.referencia||e.refDir)}</code></td>
+      <td>${anyo}</td>
+      <td class="text-muted" style="font-size:.75rem">${esc(e.emplazamiento||'')}</td>
+      <td style="font-size:.75rem">${esc(e.tipoExp||'')}</td>
+      <td>${e.numDocs > 0 ? `<span class="doc-count">${e.numDocs}</span>` : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function setView(v) {
+  currentView = v;
+  document.getElementById('btnCards').classList.toggle('active', v==='cards');
+  document.getElementById('btnTable').classList.toggle('active', v==='table');
+  document.getElementById('cardsView').style.display = v==='cards' ? '' : 'none';
+  document.getElementById('tableView').style.display = v==='table' ? '' : 'none';
+  renderLista();
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────────
+function abrirModal(id) {
+  const e = BY_ID[id];
+  if (!e) return;
+
+  document.getElementById('mTitle').innerHTML =
+    `${tipoPill(e.tipo)} ${esc(e.calle)} &nbsp;<small class="fw-normal opacity-75">${esc(e.referencia||e.refDir)}</small>`;
+
+  const flags = [
+    e.contieneResoluciones  ? '<span class="badge bg-success">Resoluciones</span>'           : '',
+    e.contieneDocumentos    ? '<span class="badge bg-primary">Documentos (API)</span>'        : '',
+    e.contieneInspecciones  ? '<span class="badge bg-warning text-dark">Inspecciones</span>'  : '',
+  ].filter(Boolean).join(' ');
+
+  const gps = e.coordX
+    ? `<span class="badge bg-info text-dark ms-1" style="font-size:.68rem">📍 GPS</span>` : '';
+
+  const docsHtml = e.documentos && e.documentos.length > 0
+    ? `<div class="mt-3">
+        <h6 class="mb-2"><i class="bi bi-folder2-open me-1"></i>Documentos (${e.documentos.length})</h6>
+        <ul class="list-unstyled mb-0">
+          ${e.documentos.map(d => {
+            const url  = `/doc/${encodeURIComponent(e.calleDir)}/${encodeURIComponent(e.refDir)}/${encodeURIComponent(d)}`;
+            const ext  = (d.split('.').pop()||'').toUpperCase();
+            const icon = ext === 'PDF' ? 'bi-file-pdf text-danger' : 'bi-file-earmark';
+            return `<li><a class="doc-link" href="${url}" target="_blank"><i class="bi ${icon}"></i>${esc(d)}</a></li>`;
+          }).join('')}
+        </ul>
+      </div>`
+    : '<p class="text-muted small mt-3 mb-0"><i class="bi bi-info-circle me-1"></i>Sin documentos descargados</p>';
+
+  document.getElementById('mBody').innerHTML = `
+    <div class="row g-3">
+      <div class="col-md-6">
+        <table class="table table-sm detail-table">
+          <tbody>
+            <tr><th>Referencia</th><td><code>${esc(e.referencia||'—')}</code></td></tr>
+            <tr><th>Código interno</th><td><code>${esc(e.codigoInterno||'—')}</code></td></tr>
+            <tr><th>Fecha alta</th><td>${esc(e.fechaAlta||'—')}</td></tr>
+            <tr><th>Emplazamiento</th><td>${esc(e.emplazamiento||'—')} ${gps}</td></tr>
+            <tr><th>Área</th><td>${esc(e.area||'—')}</td></tr>
+            <tr><th>Dependencia</th><td>${esc(e.dependenciaTramitadora||'—')}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col-md-6">
+        <div class="mb-2 d-flex gap-1 flex-wrap">${flags || '<span class="text-muted small">Sin flags</span>'}</div>
+        ${e.asunto ? `<div class="asunto-box"><strong class="d-block mb-1">Asunto:</strong>${esc(e.asunto)}</div>` : ''}
+      </div>
+    </div>
+    ${docsHtml}
+  `;
+
+  bsModal.show();
+}
+
+// ── Mapa ───────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById('btnTabLista').classList.toggle('active', tab==='lista');
+  document.getElementById('btnTabMapa').classList.toggle('active', tab==='mapa');
+  document.getElementById('tabLista').style.display  = tab==='lista' ? '' : 'none';
+  document.getElementById('tabMapa').style.display   = tab==='mapa'  ? '' : 'none';
+
+  if (tab === 'mapa') {
+    initMapa();
+    renderMapa();
+  }
+}
+
+function initMapa() {
+  if (mapReady) return;
+  mapReady = true;
+
+  // Los Berrocales: ~40.375°N, 3.610°W
+  leafletMap = L.map('map').setView([40.375, -3.610], 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+    maxZoom: 19,
+  }).addTo(leafletMap);
+
+  cluster = L.markerClusterGroup({ maxClusterRadius: 50, spiderfyOnMaxZoom: true });
+  leafletMap.addLayer(cluster);
+}
+
+function renderMapa() {
+  if (!mapReady) return;
+
+  const f = {
+    q:    document.getElementById('mq').value.trim().toLowerCase(),
+    tipo: document.getElementById('mTipo').value,
+    anyo: document.getElementById('mAnyo').value,
+    tipoExp: '', docs: false,
+  };
+
+  const filtered = filtrar(DATA, f).filter(e => e.coordX && e.coordY);
+  cluster.clearLayers();
+
+  const colorMap = { AV: '#0d6efd', CL: '#198754', PZ: '#fd7e14' };
+
+  filtered.forEach(e => {
+    const latlng = toWgs84(e.coordX, e.coordY);
+    if (!latlng) return;
+
+    const color = colorMap[e.tipo] || '#6c757d';
+    const size  = e.numDocs > 0 ? 14 : 10;
+    const icon  = L.divIcon({
+      className: '',
+      html: `<div style="width:${size}px;height:${size}px;border-radius:50%;
+                         background:${color};border:2px solid white;
+                         box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>`,
+      iconSize:   [size, size],
+      iconAnchor: [size/2, size/2],
+    });
+
+    const anyo = (e.fechaAlta||'').slice(0,4);
+    const popup = `
+      <div style="min-width:200px">
+        <div style="font-weight:700;color:#003893">${esc(e.tipo)} ${esc(e.calle)}</div>
+        <div style="font-family:monospace;font-size:.78rem;color:#666">${esc(e.referencia||e.refDir)}</div>
+        ${e.tipoExp ? `<div style="font-size:.75rem;color:#888;margin-top:2px">${esc(e.tipoExp)}</div>` : ''}
+        ${e.emplazamiento ? `<div style="font-size:.75rem;margin-top:4px">📍 ${esc(e.emplazamiento)}</div>` : ''}
+        ${anyo ? `<div style="font-size:.72rem;color:#888">${esc(e.fechaAlta)}</div>` : ''}
+        ${e.numDocs > 0 ? `<div style="font-size:.75rem;margin-top:4px">📎 ${e.numDocs} doc${e.numDocs>1?'s':''}</div>` : ''}
+        <div style="margin-top:8px">
+          <button onclick="window._openFromMap('${esc(e.codigoInterno)}')"
+                  style="background:#003893;color:white;border:none;border-radius:5px;
+                         padding:3px 10px;font-size:.75rem;cursor:pointer">
+            Ver detalle
+          </button>
+        </div>
+      </div>`;
+
+    L.marker(latlng, { icon }).bindPopup(popup).addTo(cluster);
+  });
+
+  document.getElementById('mInfo').textContent =
+    `${filtered.length} expediente${filtered.length!==1?'s':''} con coordenadas GPS`;
+}
+
+// Called from Leaflet popup (global scope)
+window._openFromMap = function(id) {
+  leafletMap.closePopup();
+  abrirModal(id);
+};
+</script>
+
+</body>
+</html>
